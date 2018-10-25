@@ -16,10 +16,8 @@
 
 package com.github.jarlakxen.drunk
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.circe._
 import extensions.{GraphQLExtensions, NoExtensions}
 import io.circe._
 import io.circe.parser._
@@ -28,7 +26,9 @@ import sangria.introspection._
 import sangria.marshalling.circe._
 import sangria.parser.QueryParser
 
-class GraphQLClient[F[_]] private[GraphQLClient] (uri: Uri, options: ClientOptions, headers: Seq[(String, String)])(implicit backend: SttpBackend[F, Nothing]) {
+class GraphQLClient[F[_]] private[GraphQLClient] (uri: Uri, options: ClientOptions, headers: Seq[(String, String)])(
+  implicit backend: SttpBackend[F, Nothing]
+) {
   import GraphQLClient._
 
   private val rm: MonadError[F] = backend.responseMonad
@@ -38,11 +38,12 @@ class GraphQLClient[F[_]] private[GraphQLClient] (uri: Uri, options: ClientOptio
   ): F[(Int, Json)] =
     execute(GraphQLOperation(doc, variables, name))
 
-  private def buildRequest(body: String): RequestT[Id, String, Nothing] = sttp
-    .post(uri)
-    .body(body)
-    .response(asString)
-    .headers(headers: _*)
+  private def buildRequest(body: String): RequestT[Id, String, Nothing] =
+    sttp
+      .post(uri)
+      .body(body)
+      .response(asString)
+      .headers(headers: _*)
 
   private[drunk] def execute[Res, Vars](op: GraphQLOperation[Res, Vars]): F[(Int, Json)] = {
 
@@ -106,7 +107,7 @@ class GraphQLClient[F[_]] private[GraphQLClient] (uri: Uri, options: ClientOptio
   def query[Res, Vars](doc: Document, variables: Option[Vars], operationName: Option[String])(
     implicit
     dec: Decoder[Res],
-    en: Encoder[Vars],
+    en: Encoder[Vars]
   ): GraphQLCursor[F, Res, Vars] = {
     var fullDoc = doc
     if (options.addTypename) {
@@ -153,7 +154,7 @@ object GraphQLClient {
 
     def toTry(implicit ev: A <:< Throwable): Try[B] = either match {
       case Right(b) => Success(b)
-      case Left(a) => Failure(a)
+      case Left(a)  => Failure(a)
     }
 
     def toOption: Option[B] = either match {
@@ -183,10 +184,14 @@ object GraphQLClient {
     }
   }
 
-  private[GraphQLClient] def extractData[Res](jsonBody: Json)(implicit dec: Decoder[Res]): Try[GraphQLResponseData[Res]] =
+  private[GraphQLClient] def extractData[Res](
+    jsonBody: Json
+  )(implicit dec: Decoder[Res]): Try[GraphQLResponseData[Res]] =
     jsonBody.hcursor.downField("data").as[Res].toTry.map(GraphQLResponseData(_))
 
-  private[GraphQLClient] def extractErrorOrData[Res](jsonBody: Json, statusCode: Int)(implicit dec: Decoder[Res]): Try[GraphQLResponse[Res]] = {
+  private[GraphQLClient] def extractErrorOrData[Res](jsonBody: Json, statusCode: Int)(
+    implicit dec: Decoder[Res]
+  ): Try[GraphQLResponse[Res]] = {
     val errors: Option[Try[GraphQLResponse[Res]]] =
       extractErrors(jsonBody, statusCode).map(errors => Success(Left(errors)))
     val data: Try[GraphQLResponse[Res]] =
@@ -196,8 +201,7 @@ object GraphQLClient {
   }
 
   private[GraphQLClient] def extractExtensions(jsonBody: Json): GraphQLExtensions =
-    jsonBody
-      .hcursor
+    jsonBody.hcursor
       .downField("extensions")
       .as[GraphQLExtensions]
       .toOption
