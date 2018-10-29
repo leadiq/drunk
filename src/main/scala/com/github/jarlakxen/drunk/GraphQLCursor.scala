@@ -16,28 +16,25 @@
 
 package com.github.jarlakxen.drunk
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.github.jarlakxen.drunk.extensions._
 import io.circe._
-import sangria._
 
-class GraphQLCursor[Res, Vars](
-  client: GraphQLClient,
-  val result: Future[GraphQLClient.GraphQLResponse[Res]],
-  val extensions: Future[GraphQLExtensions],
-  val lastOperation: GraphQLOperation[Res, Vars])(implicit responseDecoder: Decoder[Res], ec: ExecutionContext) {
+class GraphQLCursor[F[_], Res, Vars](
+  client: GraphQLClient[F],
+  val result: F[GraphQLClient.GraphQLResponse[Res]],
+  val extensions: F[GraphQLExtensions],
+  val lastOperation: GraphQLOperation[Res, Vars])(implicit responseDecoder: Decoder[Res]) {
 
-  def refetch: GraphQLCursor[Res, Vars] =
+  def refetch: GraphQLCursor[F, Res, Vars] =
     refetch(None)
 
-  def fetchMore(variables: Vars): GraphQLCursor[Res, Vars] =
+  def fetchMore(variables: Vars): GraphQLCursor[F, Res, Vars] =
     refetch(Some(variables))
 
-  def fetchMore(newVars: Vars => Vars): GraphQLCursor[Res, Vars] =
+  def fetchMore(newVars: Vars => Vars): GraphQLCursor[F, Res, Vars] =
     refetch(lastOperation.variables.map(newVars(_)))
 
-  private def refetch(variables: Option[Vars]): GraphQLCursor[Res, Vars] = {
+  private def refetch(variables: Option[Vars]): GraphQLCursor[F, Res, Vars] = {
     implicit val variablesEncoder = lastOperation.variablesEncoder
     client.query(lastOperation.doc, variables, lastOperation.name)
   }

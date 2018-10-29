@@ -49,14 +49,15 @@ val circeV          = "0.10.+"
 val slf4JV          = "1.7.25"
 val logbackV        = "1.2.3"
 val scalatestV      = "3.0.5"
+val sttpV           = "1.3.+"
 
 libraryDependencies ++= Seq(
   // --- GraphQL --
   "org.sangria-graphql" %% "sangria"          % sangriaV,
   "org.sangria-graphql" %% "sangria-circe"    % sangriaCirceV,
-  // --- Akka --
-  "com.typesafe.akka"   %% "akka-http"        % akkaHttpV,
-  "de.heikoseeberger"   %% "akka-http-circe"  % akkaHttpCircleV,
+  // --- STTP --
+  "com.softwaremill.sttp" %% "core"           % sttpV,
+  "com.softwaremill.sttp" %% "circe"          % sttpV,
   // --- Utils ---
   "io.circe"            %% "circe-generic"    % circeV,
   "io.circe"            %% "circe-parser"     % circeV,
@@ -65,7 +66,10 @@ libraryDependencies ++= Seq(
   "ch.qos.logback"      %  "logback-classic"  % logbackV        % Test,
   // --- Testing ---
   "com.typesafe.akka"   %% "akka-http-testkit"  % akkaHttpV     % Test,
-  "org.scalatest"       %% "scalatest"          % scalatestV    % Test
+  "org.scalatest"       %% "scalatest"          % scalatestV    % Test,
+  "com.softwaremill.sttp" %% "akka-http-backend" % sttpV        % Test,
+  "com.typesafe.akka"   %% "akka-http"        % akkaHttpV       % Test,
+  "de.heikoseeberger"   %% "akka-http-circe"  % akkaHttpCircleV % Test,
 )
 
 // ··· Testing Configuration ···
